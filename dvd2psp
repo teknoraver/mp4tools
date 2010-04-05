@@ -1,0 +1,38 @@
+#!/bin/bash
+
+[ "$#" -lt 1 ] && exec echo -e "usage: $0 <filmname.mp4> [input device|input iso|input dir] [title] [chapter]\n\texample: $0 myfilm.mp4 /dev/dvd"
+
+[ "$#" -ge 2 ] && DEV="$2"
+[ "$#" -ge 3 ] && DVDTITLE="$3"
+[ "$#" -ge 4 ] && CHAPTER="$4"
+
+. mp4tools
+
+X264OPTS='partitions=all:direct=auto:ref=6:me=umh:subq=7:mixed_refs:trellis=1:level_idc=13'
+TWIDTH=480
+THEIGHT=272
+VB=300
+
+analyse "dvd://$DVDTITLE"
+scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT
+
+dvdrip /tmp/dvd.$$.avi || clean_tmp
+
+if [ $HAS_AUDIO ]
+then
+	audiorip /tmp/dvd.$$.avi /tmp/audio.$$.wav lavcresample=44100 || clean_tmp
+
+	normalize /tmp/audio.$$.wav || clean_tmp
+
+	aacenc /tmp/audio.$$.wav /tmp/audio.$$.aac || clean_tmp
+	rm -f /tmp/audio.$$.wav
+fi
+
+if [ $HAS_VIDEO ]
+then
+	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+fi
+
+avmux "$1" || clean_tmp
+
+clean_tmp 0

@@ -1,0 +1,49 @@
+mp4tools are a set of GPL scripts to create MPEG4 compliant file, with presets
+for playback on iPod, PSP, standard 3gp phones and latest ones (specifically Nokia S60v3 based).
+mp4tools quality is quite impressive due to the techniques it uses as 2pass encoding,
+state of the art audio/video codecs, peak normalization, highly tuned encoding parameters etc.
+every script has 2 file, mkX and dvd2X where mkX encodes from a file while dvd2X rips from DVD
+
+the scripts are:
+
+name		|description
+----------------|---------------------------------------------
+mk3gp		encodes a standard 3gp file
+mks60		encodes an high quality 3gp file
+mkamr		encodes an AMR file (ringtone)
+mkmp4		encodes an high quality H.264 Video file
+mkipod		encodes a movie for the Apple iPod
+mkpsp		encodes a movie for the Sony PSP
+dvd23gp		rips a DVD to a standard 3gp file
+dvd2s60		rips a DVD to an high quality 3gp file
+dvd2psp		rips a DVD to a movie for the Sony PSP
+dvd2ipod	rips a DVD to a movie for the Apple iPod
+mp4tools	set of functions used by the above scripts
+
+INSTALL
+
+just do:
+make install INSTDIR=/path
+
+REQUIREMENTS
+bash (obviously :P)
+mplayer/mencoder with xvid and/or x264 support (http://www.mplayerhq.hu/)
+amrenc (http://teknoraver.campuslife.it/software/)
+MP4Box (http://gpac.sourceforge.net/)
+faac (http://www.audiocoding.com/downloads.html)
+aacplusenc (http://openjlabs.com/index.php/downloads.html)
+
+OPTIONAL
+normalize-audio (http://normalize.nongnu.org/)
+nokiatagger (http://teknoraver.campuslife.it/software/mp4tools/)
+
+you could also use neroAacEnc (Ahead's AAC+ encoder) which is binary only and that
+can be found here: ftp://ftp6.nero.com/tools/NeroDigitalAudio.zip by setting the
+mp4tools will detect and use it if available
+
+feel free to write me at rootkit85@yahoo.it
+
+I hope that this program will be helpful to you
+
+Cheers,
+Matteo

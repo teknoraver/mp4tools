@@ -1,0 +1,25 @@
+Source: mp4tools
+Build-Depends: debhelper, dpatch
+Section: sound
+Priority: optional
+Standards-Version: 3.7.3
+Maintainer: Matteo Croce <rootkit85@yahoo.it>
+
+Package: mp4tools
+Architecture: all
+Section: sound
+Priority: optional
+Depends: mplayer, mencoder, amrenc, aacplusenc, normalize-audio, gpac, faac, bc
+Description: Suite of scripts to encode Audio and Video in many formats
+ mp4tools are a set of scripts to encode audio and video in many formats.
+ It has presets for most common embedded devices like Sony PSP, Apple iPod,
+ Nokia Phones, so you haven't to go in the jungle of encoding options,
+ firmware bugs or unsupported configurations
+ .
+ Hot functions are:
+ support for embedded devices
+ direct rip from DVD
+ autocrop of black borders to have a bigger visual
+ audio peak normalization to make audio sound louder
+ .
+ Official web site is: http://teknoraver.campuslife.it/software/mp4tools/

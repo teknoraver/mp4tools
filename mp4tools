@@ -1,0 +1,320 @@
+#!/bin/bash
+
+[ -z "$DEV" ] && DEV=/dev/sr0
+[ -z "$DVDTITLE" ] && DVDTITLE=1
+[ -z "$CHAPTER" ] && CHAPTER=1
+DVDLANG="${LANG:0:2}"
+
+which neroAacEnc >/dev/null && export AAC_ENCODER=nero
+
+[ -z "$DEBUG" ] && export MSG='-msglevel all=0:statusline=5:avsync=5'
+[ "$1" = 'dvd://' ] && export DVDOPTS="-dvd-device $DEV -alang $DVDLANG -chapter $CHAPTER -cache 16384"
+
+trap clean_tmp SIGINT
+trap clean_tmp SIGQUIT
+trap clean_tmp SIGKILL
+
+#clean_tmp [exitcode]
+clean_tmp()
+{
+	[ -z "$KEEPTEMP" ] && rm -f /tmp/*.$$.*
+	exit ${1:-1}
+}
+
+#green <string>
+green()
+{
+	echo -e "\n\e[32m$1\e[39;49m"
+}
+
+#red <string>
+rederr()
+{
+	echo -e "\n\e[31m$1\e[39;49m"
+}
+
+FPS=
+HEIGTH=
+WIDTH=
+CHANNELS=
+
+#analyse <infile>
+analyse()
+{
+	green "Analysing input file"
+	mplayer $DVDOPTS -frames 0 -identify -ao null -vo null "$1" 2>/dev/null |fgrep ID_ >/tmp/info.$$.txt
+	RET=$?
+	fgrep -q ID_VIDEO /tmp/info.$$.txt && HAS_VIDEO=1
+	fgrep -q ID_AUDIO /tmp/info.$$.txt && HAS_AUDIO=1
+	if [ -z "$HAS_AUDIO$HAS_VIDEO" ]
+	then
+		rederr "No streams found, encoding failed"
+		clean_tmp
+	fi
+	FPS=$(awk -F= '/ID_VIDEO_FPS/{print$2}' /tmp/info.$$.txt)
+	[ -z "$OFPS" ] && OFPS=$FPS
+	OFPS="$(bc <<< "if ($OFPS<=30) $OFPS else 25")"
+
+	HEIGHT=$(awk -F= '/ID_VIDEO_HEIGHT/{print$2}' /tmp/info.$$.txt)
+	WIDTH=$(awk -F= '/ID_VIDEO_WIDTH/{print$2}' /tmp/info.$$.txt)
+
+	CHANNELS=$(awk -F= '/ID_AUDIO_NCH/{print$2}' /tmp/info.$$.txt |tail -n1)
+
+	if fgrep -q ID_CLIP_INFO_N /tmp/info.$$.txt
+	then
+		TAGS=$(awk -F= '/ID_CLIP_INFO_N=/{print$2}' /tmp/info.$$.txt)
+		for i in $(seq 0 $TAGS)
+		do
+			fgrep -q "ID_CLIP_INFO_NAME$i=Title" /tmp/info.$$.txt && TITLE=$(awk -F= "/ID_CLIP_INFO_VALUE$i=/{print\$2}" /tmp/info.$$.txt)
+			fgrep -q "ID_CLIP_INFO_NAME$i=Artist" /tmp/info.$$.txt && ARTIST=$(awk -F= "/ID_CLIP_INFO_VALUE$i=/{print\$2}" /tmp/info.$$.txt)
+			fgrep -q "ID_CLIP_INFO_NAME$i=Album" /tmp/info.$$.txt && ALBUM=$(awk -F= "/ID_CLIP_INFO_VALUE$i=/{print\$2}" /tmp/info.$$.txt)
+			fgrep -q "ID_CLIP_INFO_NAME$i=Year" /tmp/info.$$.txt && YEAR=$(awk -F= "/ID_CLIP_INFO_VALUE$i=/{print\$2}" /tmp/info.$$.txt)
+			fgrep -q "ID_CLIP_INFO_NAME$i=Genre" /tmp/info.$$.txt && GENRE=$(awk -F= "/ID_CLIP_INFO_VALUE$i=/{print\$2}" /tmp/info.$$.txt)
+		done
+	fi
+
+	[ $HAS_VIDEO ] && cropdetect "$1"
+	return $RET
+}
+
+#cropdetect <infile>
+cropdetect()
+{
+	green "Detecting crop area..."
+	CROPDETECT="$(mplayer $DVDOPTS "$1" -benchmark -vo null -ac null -vf cropdetect -frames 1000 2>/dev/null |fgrep '[CROP]' |egrep -o -- 'crop=([[:digit:]]{1,4}:){3}[[:digit:]]{1,4}' |tail -n1)"
+	CWIDTH=$(echo "$CROPDETECT" |cut -d= -f2 |cut -d: -f1)
+	CHEIGHT=$(echo "$CROPDETECT" |cut -d= -f2 |cut -d: -f2)
+	if [[ -n $CROPDETECT && (( $CWIDTH < $WIDTH || $CHEIGHT < $HEIGHT )) ]]
+	then
+		if [ -n "$VF" ]
+		then
+			VF="$CROPDETECT,$VF"
+		else
+			VF="$CROPDETECT"
+		fi
+		WIDTH="$CWIDTH"
+		HEIGHT="$CHEIGHT"
+	fi
+}
+
+
+#scaleres <orig width> <orig height> <target width> <target height> [exact scale]
+scaleres()
+{
+	green "Scaling a $1x$2 movie to $3x$4"
+	if (( $1 > $3 || $2 > $4 )) # the video is wider OR taller
+	then
+		if ((($1 * 1000 / $2) > ($3 * 1000 / $4))) # orig video is wider, stretch it to fit in width
+		then
+			SCALE="scale=$3:-10"
+		elif ((($1 * 1000 / $2) < ($3 * 1000 / $4))) # orig wideo is taller, stretch it to fit in heigth
+		then
+			SCALE="scale=-10:$4"
+		else # aspect ratio is the same, just scale
+			SCALE="scale=$3:$4"
+		fi
+		[ -n "$5" ] && SCALE="expand=$3:$4"
+	fi
+	if [ -n "$SCALE" ]
+	then
+		[ -n "$VF" ] && SCALE=",$SCALE"
+		VF="$VF$SCALE"
+	fi
+}
+
+#cropres <orig width> <orig height> <target width> <target height>
+cropres()
+{
+	green "Cropping a $1x$2 movie to $3x$4"
+	if (( $1 > $3 && $2 > $4 )) # the video is wider AND taller
+	then
+		if ((($1 * 1000 / $2) > ($3 * 1000 / $4))) # orig video is wider, stretch it and crop the borders
+		then
+			CROP="scale=-10:$4,crop=$3:$4"
+		elif ((($1 * 1000 / $2) < ($3 * 1000 / $4))) # orig wideo is taller, stretch it and crop top/bottom
+		then
+			CROP="scale=$3:-10,crop=$3:$4"
+		else # aspect ratio is the same, just scale
+			CROP="scale=$3:$4"
+		fi
+	elif (( $1 > $3 || $2 > $4 )) # the video is wider OR taller
+	then
+		CROP="crop=$3:$4"
+	fi
+	if [ -n "$CROP" ]
+	then
+		[ -n "$VF" ] && CROP=",$CROP"
+		VF="$VF$CROP"
+	fi
+}
+
+#dvdrip <outfile>
+dvdrip()
+{
+	green "\e[32mRipping DVD..."
+	[ -n "$VF" ] && VF="-vf $VF"
+	[ -n "$OFPS" ] && OFPS="-ofps $OFPS"
+	mencoder $DVDOPTS $OFPS $VF -ovc lavc -lavcopts vcodec=ffvhuff -oac copy -o "$1" "dvd://$DVDTITLE" $MSG
+	RET=$?
+	[ -b "$DEV" ] && eject "$DEV"
+	unset VF
+	return $RET
+}
+
+#normalize <infile>
+normalize()
+{
+	if ! which normalize-audio >/dev/null
+	then
+		rederr "normalize-audio not found!"
+		return 0;
+	fi
+	green "Normalizing Audio"
+	dd if="$1" of="/tmp/header.$$.wav" bs=44 count=1 2>/dev/null
+	normalize-audio --peak "$1"
+	RET=$?
+	dd if="/tmp/header.$$.wav" of="$1" bs=44 count=1 conv=notrunc 2>/dev/null
+	return $RET
+}
+
+#audiorip <infile> <outfile> [filters]
+audiorip()
+{
+	[ -n "$3" ] && AF="-af $3"
+	green "Ripping Audio"
+	mplayer "$1" -benchmark -novideo -ao "pcm:fast:file=$2" $AF $MSG
+}
+
+#aacenc <infile> <outfile>
+amrencode()
+{
+	green "Encoding AMR Audio"
+	amrenc "$1" "$2"
+	RET=$?
+	MP4BOX_AOPTS="-add $2"
+	return $RET
+}
+
+#neroAacEnc <infile> <outfile> <params>
+neroaacenc()
+{
+	neroAacEnc -if "$1" -of /tmp/audio.$$.mp4 $3
+	RET=$?
+	MP4Box -raw 1 /tmp/audio.$$.mp4
+	mv /tmp/audio.$$_track1.aac "$2"
+	[ -z "$KEEPTEMP" ] && rm -f /tmp/audio.$$.mp4
+	return $RET
+}
+
+#aacenc <infile> <outfile> [quality]
+aacenc()
+{
+	green "Encoding AAC Audio"
+	if [ "$AAC_ENCODER" = 'nero' ]
+	then
+		neroaacenc "$1" "$2" "-lc -q ${3:-0.20}"
+		RET=$?
+	else
+		faac --mpeg-vers 4 -o "$2" "$1"
+		RET=$?
+	fi
+	MP4BOX_AOPTS="-add $2"
+	return $RET
+}
+
+#aacplusenc <infile> <outfile> [quality]
+aacplusencode()
+{
+	green "Encoding AAC+ Audio"
+	if [ "$AAC_ENCODER" = 'nero' ]
+	then
+		[ "$CHANNELS" = 2 ] && PS='v2'
+		neroaacenc "$1" "$2" "-he$PS -q ${3:-0.15}"
+		RET=$?
+	else
+		aacplusenc "$1" "$2" 32
+		RET=$?
+	fi
+	MP4BOX_AOPTS="-sbrx -add $2"
+	return $RET
+}
+
+#xvidenc <infile> <outfile> [options] [bitrate]
+xvidenc()
+{
+	if [ -z "$VF" ]
+	then
+		VF=harddup
+	else
+		VF="$VF,harddup"
+	fi
+	VF="-vf $VF"
+	[ -n "$OFPS" ] && MOFPS="-fps $OFPS"
+	[ -n "$OFPS" ] && OFPS="-ofps $OFPS"
+
+	VB="${4:-500}"
+	XVIDOPTS="bitrate=$VB:${3:-max_bframes=0:chroma_opt:lumi_mask}"
+
+	green "Encoding MPEG4 Video (1st pass)"
+	mencoder "$1" $VF $OFPS -nosound -o /dev/null -of rawvideo -ovc xvid -xvidencopts $XVIDOPTS:pass=1:turbo -passlogfile /tmp/xvidenc.$$.log $MSG
+
+	green "Encoding MPEG4 Video (2nd pass)"
+	mencoder "$1" $VF $OFPS -nosound -o "$2" -of rawvideo -ovc xvid -xvidencopts $XVIDOPTS:pass=2 -passlogfile /tmp/xvidenc.$$.log $MSG
+	RET=$?
+	[ -z "$KEEPTEMP" ] && rm -f /tmp/xvidenc.$$.log
+	MP4BOX_VOPTS="$MOFPS -add $2"
+	return $RET
+}
+
+#h264enc <infile> <outfile> [options] [bitrate]
+h264enc()
+{
+#	[ -n "$VF" ] && VF="-vf $VF"
+	if [ -z "$VF" ]
+	then
+		VF=harddup
+	else
+		VF="$VF,harddup"
+	fi
+	VF="-vf $VF"
+	[ -n "$OFPS" ] && MOFPS="-fps $OFPS"
+	[ -n "$OFPS" ] && OFPS="-ofps $OFPS"
+
+	VB="${4:-300}"
+	X264OPTS="bitrate=$VB:$3:threads=auto"
+
+	strings /usr/lib/libx264.so |grep '^aq-' > /tmp/aq.$$.txt
+
+	if grep -q '^aq-strength$' /tmp/aq.$$.txt && grep -q '^aq-sensitivity$' /tmp/aq.$$.txt
+	then
+		green "Using x264 with experimental AQ patch"
+		X264OPTS="$X264OPTS:qcomp=1:aq_strength=0.5:aq_sensitivity=13"
+	else
+		X264OPTS="$X264OPTS:qcomp=0.8"
+	fi
+
+	green "Encoding H.264 Video (1st pass)"
+	mencoder "$1" $VF $OFPS -o /dev/null -of rawvideo -ovc x264 -nosound -x264encopts "$X264OPTS:turbo=2:pass=1" -passlogfile /tmp/x264enc.$$.log $MSG
+
+	green "Encoding H.264 Video (2nd pass)"
+	mencoder "$1" $VF $OFPS -o "$2" -of rawvideo -ovc x264 -nosound -x264encopts "$X264OPTS:pass=2" -passlogfile /tmp/x264enc.$$.log $MSG
+	RET=$?
+	[ -z "$KEEPTEMP" ] && rm -f /tmp/x264enc.$$.log
+	MP4BOX_VOPTS="$MOFPS -add $2"
+	return $RET
+}
+
+#avmux <outfile>
+# filetype is determined by the extension:
+# * => plain mp4
+# 3gp => 3gpp
+# m4v => iPod movie
+avmux()
+{
+	green "Muxing"
+	MP4Box -brand mp42 -no-sys -new $MP4BOX_OPTS $MP4BOX_VOPTS $MP4BOX_AOPTS "$1"
+	RET=$?
+	echo -en "\nsaved to "
+	green "$1"
+	return $RET
+}

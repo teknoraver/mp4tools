@@ -1,0 +1,24 @@
+#!/usr/bin/make -f
+
+version := $(shell awk '/Package/{print$$2}' debian/control)
+
+build:
+
+binary: binary-arch
+
+binary-arch: build install
+
+binary-indep:
+
+install: build
+	$(MAKE) INSTDIR=$(CURDIR)/debian/${version}/usr install
+	dh_testdir
+	dh_testroot
+	dh_installchangelogs
+	dh_installdeb
+	dh_gencontrol
+	dh_md5sums
+	dh_builddeb
+
+clean:
+	 dh_clean

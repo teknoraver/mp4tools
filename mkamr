@@ -1,0 +1,28 @@
+#!/bin/bash
+
+. mp4tools
+
+[ "$#" -lt 1 ] && exec echo "usage: $0 <file> [outfile]"
+
+XVIDOPTS='profile=sp2:chroma_opt:lumi_mask'
+VF='scale=176:-10,expand=176:144,harddup'
+VB=80
+OUTFILE="${1%.*}.amr"
+[ "$#" -gt 1 ] && OUTFILE="$2"
+
+analyse "$1"
+
+if [ $HAS_AUDIO ]
+then
+	audiorip "$1" /tmp/audio.$$.wav pan=1:0.5:0.5,lavcresample=8000 || clean_tmp
+
+	normalize /tmp/audio.$$.wav || clean_tmp
+
+	amrencode /tmp/audio.$$.wav "$OUTFILE" || clean_tmp
+	rm -f /tmp/audio.$$.wav
+else
+	exec rederr 'No audio stream(s) found!'
+fi
+
+echo -e "\nsaved to \e[32m$OUTFILE\e[39;49m"
+clean_tmp 0

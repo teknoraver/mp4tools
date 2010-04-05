@@ -1,0 +1,40 @@
+#!/bin/bash
+
+[ "$#" -lt 1 ] && exec echo -e "usage: $0 <filmname.m4v> [input device|input iso|input dir] [title] [chapter]\n\texample: $0 myfilm.m4v /dev/dvd"
+
+[ "$#" -ge 2 ] && DEV="$2"
+[ "$#" -ge 3 ] && DVDTITLE="$3"
+[ "$#" -ge 4 ] && CHAPTER="$4"
+
+. mp4tools
+
+X264OPTS='nocabac:level_idc=13:ref=3:me=umh:subq=7:trellis=1'
+TWIDTH=320
+THEIGHT=240
+VB=300
+
+analyse "dvd://$DVDTITLE"
+scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT
+
+dvdrip /tmp/dvd.$$.avi || clean_tmp
+
+if [ $HAS_AUDIO ]
+then
+	audiorip /tmp/dvd.$$.avi /tmp/audio.$$.wav lavcresample=44100 || clean_tmp
+
+	normalize /tmp/audio.$$.wav || clean_tmp
+
+	aacenc /tmp/audio.$$.wav /tmp/audio.$$.aac || clean_tmp
+	rm -f /tmp/audio.$$.wav
+fi
+
+if [ $HAS_VIDEO ]
+then
+#	OFPS=15
+	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+fi
+
+MP4BOX_OPTS='-ipod'
+avmux "$1" || clean_tmp
+
+clean_tmp 0

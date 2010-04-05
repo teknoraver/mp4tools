@@ -1,0 +1,36 @@
+#!/bin/bash
+
+. mp4tools
+
+[ "$#" -lt 1 ] && exec echo "usage: $0 <file> [outfile]"
+
+XVIDOPTS='profile=sp2:chroma_opt:lumi_mask'
+TWIDTH=176
+THEIGHT=144
+VB=80
+OUTFILE="${1%.*}.3gp"
+[ "$#" -gt 1 ] && OUTFILE="$2"
+
+analyse "$1"
+scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT exact
+
+if [ $HAS_AUDIO ]
+then
+	audiorip "$1" /tmp/audio.$$.wav pan=1:0.5:0.5,lavcresample=8000 || clean_tmp
+
+	normalize /tmp/audio.$$.wav || clean_tmp
+
+	amrencode /tmp/audio.$$.wav /tmp/audio.$$.amr || clean_tmp
+	rm -f /tmp/audio.$$.wav
+fi
+
+if [ $HAS_VIDEO ]
+then
+	OFPS=12.5
+	xvidenc "$1" /tmp/video.$$.m4v $XVIDOPTS $VB || clean_tmp
+fi
+
+MP4BOX_OPTS='-3gp'
+avmux "$OUTFILE" || clean_tmp
+
+clean_tmp 0

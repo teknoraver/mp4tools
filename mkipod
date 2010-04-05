@@ -1,0 +1,42 @@
+#!/bin/bash
+
+. mp4tools
+
+VB=${3:-300}
+X264OPTS='nocabac:level_idc=13:ref=3:me=umh:subq=7:trellis=1'
+TWIDTH=320
+THEIGHT=240
+
+[ "$#" -lt 1 ] && exec echo "usage: $0 <file> [outfile] [bitrate]"
+
+OUTFILE="${1%.*}.m4v"
+[ "$#" -gt 1 ] && OUTFILE="$2"
+
+analyse "$1"
+scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT
+
+if [ $HAS_AUDIO ]
+then
+	audiorip "$1" /tmp/audio.$$.wav lavcresample=44100 || clean_tmp
+
+	normalize /tmp/audio.$$.wav || clean_tmp
+
+	if [ -z $HAS_VIDEO ]
+	then
+		OUTFILE="${OUTFILE%.*}.m4a"
+		AQ='0.2'
+		green "Audio only file, increasing quality a bit and saving to $OUTFILE"
+	fi
+	aacenc /tmp/audio.$$.wav /tmp/audio.$$.aac $AQ || clean_tmp
+	rm -f /tmp/audio.$$.wav
+fi
+
+if [ $HAS_VIDEO ]
+then
+	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+fi
+
+MP4BOX_OPTS='-ipod'
+avmux "$OUTFILE" || clean_tmp
+
+clean_tmp 0

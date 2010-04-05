@@ -1,0 +1,41 @@
+#!/bin/bash
+
+[ "$#" -lt 1 ] && exec echo -e "usage: $0 <filmname.mp4> [input device|input iso|input dir] [title] [chapter]\n\texample: $0 myfilm.mp4 /dev/dvd"
+
+[ "$#" -ge 2 ] && DEV="$2"
+[ "$#" -ge 3 ] && DVDTITLE="$3"
+[ "$#" -ge 4 ] && CHAPTER="$4"
+
+. mp4tools
+
+#X264OPTS='nocabac:qcomp=0.8:level_idc=12:ref=3:partitions=all:direct=auto:me=umh:subme=7:mixed-refs'
+XVIDOPTS='max_bframes=0:chroma_opt'
+TWIDTH=320
+THEIGHT=240
+VB=160
+
+analyse "dvd://$DVDTITLE"
+scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT
+
+dvdrip /tmp/dvd.$$.avi || clean_tmp
+
+if [ $HAS_AUDIO ]
+then
+	audiorip /tmp/dvd.$$.avi /tmp/audio.$$.wav lavcresample=44100 || clean_tmp
+
+	normalize /tmp/audio.$$.wav || clean_tmp
+
+	aacplusencode /tmp/audio.$$.wav /tmp/audio.$$.aac || clean_tmp
+	rm -f /tmp/audio.$$.wav
+fi
+
+if [ $HAS_VIDEO ]
+then
+#	OFPS=15
+#	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	xvidenc /tmp/dvd.$$.avi /tmp/video.$$.m4v $XVIDOPTS $VB || clean_tmp
+fi
+
+avmux "$1" || clean_tmp
+
+clean_tmp 0

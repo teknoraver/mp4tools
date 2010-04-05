@@ -1,0 +1,122 @@
+mp4tools (0.6.7) intrepid; urgency=low
+
+  * Fix mplayer status line
+  * Add better support for iPod files
+  * Intrepid upload
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 30 Oct 2008 00:04:03 +0100
+
+mp4tools (0.6.6) intrepid; urgency=low
+
+  * Intrepid upload
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Sat, 13 Sep 2008 01:25:37 +0200
+
+mp4tools (0.6.5) hardy; urgency=low
+
+  * Improved scale function
+  * When using Nero encoder -he is used instead of -hev2 with mono files
+  * If FPS is higher than 30 it will lowered to 25, this is useful to encode
+    from WMV sources, which reports a fake 1000 FPS
+  * Use threads in H.264 encodings, this will give an huge speedup on SMP
+    machines
+  * Cropdetect is more robust and faster now
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 31 Jan 2008 19:52:44 +0100
+
+mp4tools (0.6.4) hardy; urgency=low
+
+  * Fix typo in mp4tools
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Tue, 29 Jan 2008 01:23:22 +0100
+
+mp4tools (0.6.3) hardy; urgency=low
+
+  * refresh ubuntu patches
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Wed, 23 Jan 2008 20:27:20 +0100
+
+mp4tools (0.6.2) hardy; urgency=low
+
+  * Don't do useless cropping
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Sun, 20 Jan 2008 04:03:27 +0100
+
+mp4tools (0.6.1) gutsy; urgency=low
+
+  * Fixed wrong scale resolution
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 27 Dec 2007 19:30:12 +0100
+
+mp4tools (0.6) gutsy; urgency=low
+
+  * New scale routine that looks at the cropped resolution instead of the
+    original one
+  * Use HE-AACv2 instead of HE-AACv1 with Nero encoder
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 27 Dec 2007 18:59:55 +0100
+
+mp4tools (0.5.4-2) gutsy; urgency=low
+
+  * New upload
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 27 Dec 2007 03:46:38 +0100
+
+mp4tools (0.5.4) feisty gutsy; urgency=low
+
+  * Move redundant code in mp4tools
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 27 Dec 2007 03:37:38 +0100
+
+mp4tools (0.5.3) gutsy; urgency=low
+
+  * Don't remove some temp files with KEEPTEMP=1
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Fri, 14 Dec 2007 00:09:28 +0100
+
+mp4tools (0.5.2) gutsy; urgency=low
+
+  * Added compatibility with older MP4Box, like the ubuntu one
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Sat, 08 Dec 2007 15:12:51 +0100
+
+mp4tools (0.5.1) gutsy; urgency=low
+
+  * Fixed debian build
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Sat, 08 Dec 2007 14:27:26 +0100
+
+mp4tools (0.5) gutsy; urgency=low
+
+  * Fixed DVD device selection
+  * Added language detection for DVD rip
+  * Exit with an error when both audio and video are missing
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Fri, 07 Dec 2007 22:36:00 +0100
+
+mp4tools (0.4) gutsy; urgency=low
+
+  * Fixed DVDrips when a starting title was specified
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Fri, 07 Dec 2007 18:24:12 +0100
+
+mp4tools (0.3) gutsy; urgency=low
+
+  * Fixed mkpsp
+  * Raised AAC encoding quality
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 06 Dec 2007 16:50:36 +0100
+
+mp4tools (0.2) gutsy; urgency=low
+
+  * Renamed *e65 to *s60
+  * Fixed *s60 encoding, reverting to xvid codec
+  * mp4tools is no longer executable
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Thu, 06 Dec 2007 16:50:19 +0100
+
+mp4tools (0.1) gutsy; urgency=low
+
+  * Initial release.
+
+ -- Matteo Croce <rootkit85@yahoo.it>  Wed, 05 Dec 2007 17:07:15 +0100
