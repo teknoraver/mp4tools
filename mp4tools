@@ -266,10 +266,9 @@ xvidenc()
 	return $RET
 }
 
-#h264enc <infile> <outfile> [options] [bitrate]
+#h264enc <infile> <outfile> [options] [quality]
 h264enc()
 {
-#	[ -n "$VF" ] && VF="-vf $VF"
 	if [ -z "$VF" ]
 	then
 		VF=harddup
@@ -280,24 +279,11 @@ h264enc()
 	[ -n "$OFPS" ] && MOFPS="-fps $OFPS"
 	[ -n "$OFPS" ] && OFPS="-ofps $OFPS"
 
-	VB="${4:-300}"
-	X264OPTS="bitrate=$VB:$3:threads=auto"
+	VQ="${4:-22}"
+	X264OPTS="crf=$VQ:$3:threads=auto"
 
-	strings /usr/lib/libx264.so |grep '^aq-' > /tmp/aq.$$.txt
-
-	if grep -q '^aq-strength$' /tmp/aq.$$.txt && grep -q '^aq-sensitivity$' /tmp/aq.$$.txt
-	then
-		green "Using x264 with experimental AQ patch"
-		X264OPTS="$X264OPTS:qcomp=1:aq_strength=0.5:aq_sensitivity=13"
-	else
-		X264OPTS="$X264OPTS:qcomp=0.8"
-	fi
-
-	green "Encoding H.264 Video (1st pass)"
-	mencoder "$1" $VF $OFPS -o /dev/null -of rawvideo -ovc x264 -nosound -x264encopts "$X264OPTS:turbo=2:pass=1" -passlogfile /tmp/x264enc.$$.log $MSG
-
-	green "Encoding H.264 Video (2nd pass)"
-	mencoder "$1" $VF $OFPS -o "$2" -of rawvideo -ovc x264 -nosound -x264encopts "$X264OPTS:pass=2" -passlogfile /tmp/x264enc.$$.log $MSG
+	green "Encoding H.264 Video"
+	mencoder "$1" $VF $OFPS -o "$2" -of rawvideo -ovc x264 -nosound -x264encopts "$X264OPTS" $MSG
 	RET=$?
 	[ -z "$KEEPTEMP" ] && rm -f /tmp/x264enc.$$.log
 	MP4BOX_VOPTS="$MOFPS -add $2"

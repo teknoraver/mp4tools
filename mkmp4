@@ -2,10 +2,10 @@
 
 . mp4tools
 
-[ "$#" -lt 1 ] && exec echo "usage: $0 <file> [outfile] [bitrate]"
+[ "$#" -lt 1 ] && exec echo "usage: $0 <file> [outfile] [quality]"
 
-X264OPTS='bframes=16:b-pyramid:ref=6:partitions=all:direct=auto:weightb:me=umh:subme=7:b-rdo:mixed-refs:bime:8x8dct:trellis=1'
-VB=${3:-300}
+X264OPTS='bframes=16:ref=6:partitions=all:direct=auto:weightb:me=umh:subme=7:mixed-refs:8x8dct:trellis=2'
+VQ=${3:-22}
 OUTFILE="${1%.*}.mp4"
 [ "$#" -gt 1 ] && OUTFILE="$2"
 
@@ -28,7 +28,7 @@ fi
 
 if [ $HAS_VIDEO ]
 then
-	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VQ || clean_tmp
 fi
 
 avmux "$OUTFILE" || clean_tmp
