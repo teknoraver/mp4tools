@@ -2,7 +2,7 @@
 
 . mp4tools
 
-VB=${3:-300}
+VQ=${3:-24}
 X264OPTS='nocabac:level_idc=13:ref=3:me=umh:subq=7:trellis=1'
 TWIDTH=320
 THEIGHT=240
@@ -33,7 +33,7 @@ fi
 
 if [ $HAS_VIDEO ]
 then
-	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VQ || clean_tmp
 fi
 
 MP4BOX_OPTS='-ipod'

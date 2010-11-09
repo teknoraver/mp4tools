@@ -5,7 +5,7 @@
 X264OPTS='partitions=all:frameref=3:me=umh:qcomp=0.8:subq=7:me_range=32:mixed_refs:trellis=2:level_idc=13'
 TWIDTH=480
 THEIGHT=272
-VB=${3:-200}
+VQ=${3:-24}
 
 [ "$#" -lt 1 ] && exec echo "usage: $0 <inputfile> [outfile] [bitrate]"
 
@@ -32,7 +32,7 @@ fi
 
 if [ $HAS_VIDEO ]
 then
-	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VQ || clean_tmp
 fi
 
 avmux "$OUTFILE" || clean_tmp

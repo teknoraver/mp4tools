@@ -1,5 +1,5 @@
 Source: mp4tools
-Build-Depends: debhelper, dpatch
+Build-Depends: debhelper
 Section: sound
 Priority: optional
 Standards-Version: 3.7.3

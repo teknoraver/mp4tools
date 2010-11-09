@@ -8,7 +8,7 @@ X264OPTS='nocabac:qcomp=0.8:level_idc=12:ref=3:partitions=all:direct=auto:me=umh
 #XVIDOPTS='max_bframes=0:chroma_opt'
 TWIDTH=320
 THEIGHT=240
-VB=${3:-160}
+VQ=${3:-24}
 OUTFILE="${1%.*}.mp4"
 [ "$#" -gt 1 ] && OUTFILE="$2"
 
@@ -33,7 +33,7 @@ fi
 if [ $HAS_VIDEO ]
 then
 #	OFPS=15
-	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	h264enc "$1" /tmp/video.$$.264 $X264OPTS $VQ || clean_tmp
 #	xvidenc "$1" /tmp/video.$$.m4v $XVIDOPTS $VB || clean_tmp
 fi
 

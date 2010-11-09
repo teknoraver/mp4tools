@@ -11,7 +11,7 @@
 X264OPTS='partitions=all:direct=auto:ref=6:me=umh:subq=7:mixed_refs:trellis=1:level_idc=13'
 TWIDTH=480
 THEIGHT=272
-VB=300
+VQ=24
 
 analyse "dvd://$DVDTITLE"
 scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT
@@ -30,7 +30,7 @@ fi
 
 if [ $HAS_VIDEO ]
 then
-	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VQ || clean_tmp
 fi
 
 avmux "$1" || clean_tmp

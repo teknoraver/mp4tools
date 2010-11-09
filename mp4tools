@@ -182,7 +182,7 @@ audiorip()
 {
 	[ -n "$3" ] && AF="-af $3"
 	green "Ripping Audio"
-	mplayer "$1" -benchmark -novideo -ao "pcm:fast:file=$2" $AF $MSG
+	mplayer "$1" -benchmark -vo null -ao "pcm:fast:file=$2" $AF $MSG
 }
 
 #aacenc <infile> <outfile>

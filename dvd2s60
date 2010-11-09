@@ -12,7 +12,7 @@
 XVIDOPTS='max_bframes=0:chroma_opt'
 TWIDTH=320
 THEIGHT=240
-VB=160
+VQ=24
 
 analyse "dvd://$DVDTITLE"
 scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT
@@ -31,9 +31,7 @@ fi
 
 if [ $HAS_VIDEO ]
 then
-#	OFPS=15
-#	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
-	xvidenc /tmp/dvd.$$.avi /tmp/video.$$.m4v $XVIDOPTS $VB || clean_tmp
+	xvidenc /tmp/dvd.$$.avi /tmp/video.$$.m4v $XVIDOPTS $VQ || clean_tmp
 fi
 
 avmux "$1" || clean_tmp

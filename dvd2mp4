@@ -9,7 +9,7 @@
 . mp4tools
 
 X264OPTS='bframes=16:b-pyramid:ref=6:partitions=all:direct=auto:weightb:me=umh:subme=7:b-rdo:mixed-refs:bime:8x8dct:trellis=1'
-VB=700
+VQ=24
 
 analyse "dvd://$DVDTITLE"
 
@@ -27,7 +27,7 @@ fi
 
 if [ $HAS_VIDEO ]
 then
-	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VQ || clean_tmp
 fi
 
 avmux "$1" || clean_tmp

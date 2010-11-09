@@ -11,7 +11,7 @@
 X264OPTS='nocabac:level_idc=13:ref=3:me=umh:subq=7:trellis=1'
 TWIDTH=320
 THEIGHT=240
-VB=300
+VQ=24
 
 analyse "dvd://$DVDTITLE"
 scaleres $WIDTH $HEIGHT $TWIDTH $THEIGHT
@@ -31,7 +31,7 @@ fi
 if [ $HAS_VIDEO ]
 then
 #	OFPS=15
-	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VB || clean_tmp
+	h264enc /tmp/dvd.$$.avi /tmp/video.$$.264 $X264OPTS $VQ || clean_tmp
 fi
 
 MP4BOX_OPTS='-ipod'
