@@ -13,6 +13,7 @@ which neroAacEnc >/dev/null && export AAC_ENCODER=nero
 trap clean_tmp SIGINT
 trap clean_tmp SIGQUIT
 trap clean_tmp SIGKILL
+trap clean_tmp EXIT
 
 #clean_tmp [exitcode]
 clean_tmp()
@@ -182,10 +183,10 @@ audiorip()
 {
 	[ -n "$3" ] && AF="-af $3"
 	green "Ripping Audio"
-	mplayer "$1" -benchmark -vo null -ao "pcm:fast:file=$2" $AF $MSG
+	mplayer "$1" -benchmark -vo null -vc null -ao "pcm:fast:file=$2" $AF $MSG
 }
 
-#aacenc <infile> <outfile>
+#amrencode <infile> <outfile>
 amrencode()
 {
 	green "Encoding AMR Audio"
@@ -201,7 +202,7 @@ neroaacenc()
 	neroAacEnc -if "$1" -of /tmp/audio.$$.mp4 $3
 	RET=$?
 	MP4Box -raw 1 /tmp/audio.$$.mp4
-	mv /tmp/audio.$$_track1.aac "$2"
+	mv /tmp/audio.$$_track1 "$2"
 	[ -z "$KEEPTEMP" ] && rm -f /tmp/audio.$$.mp4
 	return $RET
 }
@@ -222,7 +223,7 @@ aacenc()
 	return $RET
 }
 
-#aacplusenc <infile> <outfile> [quality]
+#aacplusencode <infile> <outfile> [quality]
 aacplusencode()
 {
 	green "Encoding AAC+ Audio"
@@ -298,7 +299,7 @@ h264enc()
 avmux()
 {
 	green "Muxing"
-	MP4Box -brand mp42 -no-sys -new $MP4BOX_OPTS $MP4BOX_VOPTS $MP4BOX_AOPTS "$1"
+	MP4Box -brand mp42 -no-iod -no-sys -new $MP4BOX_OPTS $MP4BOX_VOPTS $MP4BOX_AOPTS "$1"
 	RET=$?
 	echo -en "\nsaved to "
 	green "$1"
